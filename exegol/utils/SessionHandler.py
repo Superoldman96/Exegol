@@ -73,7 +73,7 @@ class SessionHandler(metaclass=MetaSingleton):
         return self.get_license_type().value >= LicenseType.Professional.value
 
     def enterprise_feature_access(self) -> bool:
-        return self.get_license_type().value >= LicenseType.Enterprise.value
+        return self.get_license_type().value >= LicenseType.Team.value
 
     def has_feature(self, feature: LicenseFeature) -> bool:
         return feature in self.__features
@@ -491,7 +491,7 @@ class SessionHandler(metaclass=MetaSingleton):
             display += f"[green]{self.__license.name}[/green] (personal use only)"
         elif self.__license is LicenseType.Professional:
             display += f"[gold3]{self.__license.name}[/gold3] licensed to [green]{self.__username}[/green]"
-        elif self.__license is LicenseType.Enterprise:
+        elif self.__license in [LicenseType.Enterprise, LicenseType.Team]:
             display += f"[gold3]{self.__license.name}[/gold3] licensed to [green]{self.__license_owner}[/green] / [green]{self.__username}[/green]"
         else:
             raise NotImplementedError

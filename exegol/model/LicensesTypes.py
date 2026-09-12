@@ -7,7 +7,8 @@ from typing_extensions import NotRequired, TypedDict
 class LicenseType(Enum):
     Community = 0
     Professional = 1
-    Enterprise = 2
+    Team = 2
+    Enterprise = 3
 
 # Features
 class LicenseFeature(Enum):
