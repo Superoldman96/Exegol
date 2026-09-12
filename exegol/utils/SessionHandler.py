@@ -73,7 +73,7 @@ class SessionHandler(metaclass=MetaSingleton):
         return self.get_license_type().value >= LicenseType.Professional.value
 
     def enterprise_feature_access(self) -> bool:
-        return self.get_license_type().value >= LicenseType.Enterprise.value
+        return self.get_license_type().value >= LicenseType.Team.value
 
     def has_feature(self, feature: LicenseFeature) -> bool:
         return feature in self.__features
@@ -100,7 +100,15 @@ class SessionHandler(metaclass=MetaSingleton):
                 return_queue.put((None, LicenseToleration))
             except Exception as e:
                 return_queue.put((None, e))
-            self.__SESSION_LOCK.unlink(missing_ok=True)
+            except BaseException as e:
+                # The thread is being aborted (e.g. SystemExit): fallback to the toleration mode so that the
+                # caller never waits for a result that will not come, then let the thread die.
+                logger.debug(f"Session refresh thread aborted: {type(e).__name__} {e}")
+                return_queue.put((None, LicenseToleration))
+                raise
+            finally:
+                # Always release the cross-process lock, even if the refresh was aborted
+                self.__SESSION_LOCK.unlink(missing_ok=True)
             return None
         except FileExistsError:
             logger.debug(f"Session refresh lock detected.")
@@ -483,7 +491,7 @@ class SessionHandler(metaclass=MetaSingleton):
             display += f"[green]{self.__license.name}[/green] (personal use only)"
         elif self.__license is LicenseType.Professional:
             display += f"[gold3]{self.__license.name}[/gold3] licensed to [green]{self.__username}[/green]"
-        elif self.__license is LicenseType.Enterprise:
+        elif self.__license in [LicenseType.Enterprise, LicenseType.Team]:
             display += f"[gold3]{self.__license.name}[/gold3] licensed to [green]{self.__license_owner}[/green] / [green]{self.__username}[/green]"
         else:
             raise NotImplementedError
